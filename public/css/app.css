@@ -1,0 +1,49 @@
+body {
+  background-color: gainsboro;
+}
+
+table {
+  float: left;
+  border: 2px solid darkgray;
+  font-size: 20px;
+  text-align: center;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 5px 20px;
+}
+
+td {
+  border: 2px solid darkgray;
+}
+
+input {
+  font-size: 16px;
+  width: 90px;
+  height: 20px;
+  padding: 0;
+  border-radius: 5px;
+}
+
+input[type=submit] {
+  height: 40px;
+}
+
+#search {
+  width: 370px;
+}
+
+#sendNewWorker {
+  background-color: #ffd990;
+}
+
+#deleteCheckWorker {
+  width: 200px;
+  background-color: #ff2634;
+}
+
+img {
+  float: left;
+  margin: 35px;
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "db_connect": {
+      "host": "localhost",
+      "user": "root",
+      "password": "root",
+      "database": "test"
+    },
+    "server": {
+      "httpPort" : 3000
+    }
+  }
+]

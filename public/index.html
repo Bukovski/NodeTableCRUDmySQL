@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Index page</title>
+  <link rel="stylesheet" type="text/css" href="./css/app.css" />
+</head>
+<body>
+
+<h1>All workers list</h1>
+
+<form id="addWorker" method="post">
+  Name:    <input type="text" name="name"/>
+  Age:     <input type="number" name="age"/>
+  Sallary: <input type="number" name="salary"/>
+  <input type="submit" id="sendNewWorker" value="Отправить"/>
+  <input type="submit" id="deleteCheckWorker" value="Удалить отмеченные"/>
+</form>
+
+Поиск: <input type="text" id="search">
+
+<hr>
+
+<table id="workersTable">
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>name</th>
+      <th>age</th>
+      <th>salary</th>
+      <th>mark</th>
+      <th>delete</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<img src="./img/yeoman.png">
+
+<script type="text/javascript" charset="utf-8" src="./js/app.js"></script>
+</body>
+</html>
