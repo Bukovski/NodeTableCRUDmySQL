@@ -1,14 +1,23 @@
-const table = document.getElementById('workersTable').children[1];
-let allWorkers;
-
-table.oldHTML = table.innerHTML; //сохраняем шапку таблицы и в целом верстку при старте
+const app = {};
 
 
+app.doc = document;
+app.table = app.doc.getElementById('workersTable').children[1];
+app.allWorkers = '';
 
-const request = (method, url, callback) => {
+app.table.oldHTML = app.table.innerHTML; //save the layout table at the start
+
+
+
+app.request = (method, url, json, callback) => {
+  method = (typeof(method) === 'string' && ['POST','GET','PUT','DELETE'].includes(method.toUpperCase())) ? method.toUpperCase() : 'GET';
+  url = (typeof(url) === 'string') ? url : '/';
+  json = (typeof(json) === 'object' && json !== null) ? json : {};
+  
   const xhr = new XMLHttpRequest();
   
   xhr.open(method, url, true); //async-true
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
   
   xhr.onload = () => {
     if (xhr.status !== 200) return callback(xhr.status + ': ' + xhr.statusText); //404: Not Found
@@ -17,36 +26,41 @@ const request = (method, url, callback) => {
   };
   
   xhr.onerror = xhr.onabort = () => {
-    setTimeout(request(method, url, callback), 500);
+    setTimeout(app.request(method, url, json, callback), 500);
   };
   
-  xhr.send('');
+  xhr.send(JSON.stringify(json));
 };
 
-const writeTable = () => request('GET', '/api/get', (err, data) => {
-  if (err) return console.error(err);
 
-  table.innerHTML = table.oldHTML; //очищаем таблицу до стартового состояния
-  
-  allWorkers = JSON.parse(data);
-  return allWorkers.forEach((elem => {
-    table.innerHTML += `
-        <tr>
-          <td>${ elem.id }</td>
-          <td>${ elem.name }</td>
-          <td>${ elem.age }</td>
-          <td>${ elem.salary }</td>
-          <td><input type='checkbox' class="checkWorkers" value="${ elem.id }"></td>
-          <td><a href="${ elem.id }">Delete</a></td>
-        </tr>
-      `;
+app.template = (arr) => {
+  arr.forEach((elem => {
+    app.table.innerHTML += `
+      <tr>
+        <td>${ elem.id }</td>
+        <td>${ elem.name }</td>
+        <td>${ elem.age }</td>
+        <td>${ elem.salary }</td>
+        <td><input type='checkbox' class="checkWorkers" value="${ elem.id }"></td>
+        <td><a href="${ elem.id }">Delete</a></td>
+      </tr>
+    `;
   }))
+};
+
+
+app.writeTable = () => app.request('GET', '/api/get', '', (err, data) => {
+  if (err) return console.error(err);
+  
+  app.table.innerHTML = app.table.oldHTML; //purify the fields of the table
+  
+  app.allWorkers = JSON.parse(data);
+  
+  return app.template(app.allWorkers);
 });
 
-writeTable();
 
-
-table.addEventListener('click', (event) => {
+app.deleteWorker = () => app.table.addEventListener('click', (event) => {
   const target = event.target;
   
   if (target.tagName === 'A') {
@@ -55,11 +69,12 @@ table.addEventListener('click', (event) => {
     const parentDelete = target.parentNode.parentNode;
     parentDelete.parentNode.removeChild(parentDelete);
     
-    request('GET', '/api/delete?id=' + target.pathname.slice(1));
+    app.request('GET', '/api/delete?id=' + target.pathname.slice(1));
   }
 });
 
-document.getElementById('sendNewWorker').addEventListener('click', function(event) {
+
+app.createWorker = () => app.doc.getElementById('sendNewWorker').addEventListener('click', function(event) {
   event.preventDefault();
   
   const form = this.parentNode;
@@ -70,24 +85,19 @@ document.getElementById('sendNewWorker').addEventListener('click', function(even
   };
   
   if (jsonInput.name && jsonInput.age && jsonInput.salary) {
-    const xhr = new XMLHttpRequest();
-
-    xhr.open("POST", "/api/add", true);
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
-
-    xhr.send(JSON.stringify(jsonInput));
+    app.request('POST', '/api/add', jsonInput);
   
     form.elements.name.value   = '';
     form.elements.age.value    = '';
     form.elements.salary.value = '';
 
-    return writeTable();
+    return app.writeTable();
   }
   return false;
 });
 
 
-table.addEventListener('dblclick', (event) => {
+app.updateWorker = () => app.table.addEventListener('dblclick', (event) => {
   const target = event.target;
   const trArr = [];
   target.parentNode.innerHTML.replace(/<td>(.*)<\/td>/ig, (tag, item) => trArr.push(item));
@@ -96,8 +106,8 @@ table.addEventListener('dblclick', (event) => {
     target.innerHTML = (isNaN(+target.innerHTML))
       ? `<input type="text" value="${target.innerHTML}" id="focusId" onkeypress="saveData(event)" onBlur="inputBlur(event)">`
       : `<input type="number" value="${target.innerHTML}" id="focusId" onkeypress="saveData(event)" onBlur="inputBlur(event)">`;
-    
-    document.getElementById('focusId').focus();
+  
+    app.doc.getElementById('focusId').focus();
   }
 });
 
@@ -105,13 +115,22 @@ function saveData(event) {
   if(event.keyCode === 13){
     event.preventDefault();
     
-    const target = event.target;
-
-    document.getElementById('focusId').blur();
+    app.doc.getElementById('focusId').blur();
   }
 }
 
-function saveUpdate(field, str) {
+function inputBlur(event) {
+  const target = event.target;
+  
+  if (target.value !== target.defaultValue) {
+    app.saveUpdate(target.parentNode.parentNode, target.value);
+  }
+  
+  target.parentNode.innerHTML = target.value;
+}
+
+
+app.saveUpdate = (field, str) => {
   field = (typeof field === 'object' && field !== null) ? field : false;
   str = (typeof str === 'string' && str.length > 0) ? str : false;
   
@@ -126,74 +145,56 @@ function saveUpdate(field, str) {
         field = (arrFields[index])
       }
     });
-
-    
-    const xhr = new XMLHttpRequest();
   
-    xhr.open("POST", "/api/update", true);
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
-  
-    xhr.send(JSON.stringify({
-      id: trArr[0],
-      [field]: str
-    }));
+    app.request('POST', '/api/update', {id: trArr[0], [field]: str});
   }
-}
+};
 
-function inputBlur(event) {
-  const target = event.target;
-  
-  if (target.value !== target.defaultValue) {
-    saveUpdate(target.parentNode.parentNode, target.value);
-  }
-  
-  target.parentNode.innerHTML = target.value;
-}
 
-document.getElementById('search').addEventListener('keyup', (event) => { //живой поиск
-  table.innerHTML = table.oldHTML; //очищаем таблицу до стартового состояния
+app.liveSearch = () => app.doc.getElementById('search').addEventListener('keyup', (event) => {
+  app.table.innerHTML = app.table.oldHTML; //purify the fields of the table
   
-  function filterObj(arr, searchKey) {
+  const filterObj = (arr, searchKey) => {
     const lowerStr = (str) => str.toString().toLowerCase();
     searchKey = lowerStr(searchKey);
     
     return arr.filter((obj) => Object.keys(obj).some((key) => lowerStr(obj[key]).includes(searchKey)));
-  }
+  };
   
-  filterObj(allWorkers, event.target.value).forEach((elem => {
-    table.innerHTML += `
-        <tr>
-          <td>${ elem.id }</td>
-          <td>${ elem.name }</td>
-          <td>${ elem.age }</td>
-          <td>${ elem.salary }</td>
-          <td><input type='checkbox' class="checkWorkers" value="${ elem.id }"></td>
-          <td><a href="${ elem.id }">Delete</a></td>
-        </tr>
-      `;
-  }))
+  return app.template(filterObj(app.allWorkers, event.target.value));
 });
 
-document.getElementById('deleteCheckWorker').addEventListener('click', function (event) {
+
+app.deleteMany = () => app.doc.getElementById('deleteCheckWorker').addEventListener('click', function (event) {
   event.preventDefault();
   
-  const allCheckbox = document.getElementsByClassName('checkWorkers');
+  const allCheckbox = app.doc.getElementsByClassName('checkWorkers');
   const arrValue = [...allCheckbox].reduce((arr, elem) => (elem.checked) ? [...arr, elem.value] : arr, []);
   
   if (arrValue.length) {
     const idWorkersToString = arrValue.join(',');
   
-    const xhr = new XMLHttpRequest();
+    app.request('POST', '/api/deleteMany', {id: idWorkersToString});
   
-    xhr.open("POST", "/api/deleteMany", true);
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
-  
-    xhr.send(JSON.stringify({
-      id: idWorkersToString
-    }));
-  
-    return writeTable();
+    return app.writeTable();
   }
   
   return false;
 });
+
+
+app.init = () => {
+  app.writeTable();
+  
+  app.deleteWorker();
+  
+  app.createWorker();
+  
+  app.updateWorker();
+  
+  app.liveSearch();
+  
+  app.deleteMany();
+};
+
+window.onload = () => app.init();
