@@ -70,6 +70,8 @@ app.deleteWorker = () => app.table.addEventListener('click', (event) => {
     parentDelete.parentNode.removeChild(parentDelete);
     
     app.request('GET', '/api/delete?id=' + target.pathname.slice(1));
+    
+    return window.location = window.location.href;
   }
 });
 
@@ -91,7 +93,9 @@ app.createWorker = () => app.doc.getElementById('sendNewWorker').addEventListene
     form.elements.age.value    = '';
     form.elements.salary.value = '';
 
-    return app.writeTable();
+    app.writeTable();
+    
+    return window.location = window.location.href;
   }
   return false;
 });
@@ -140,13 +144,17 @@ app.saveUpdate = (field, str) => {
   
     field.innerHTML.replace(/<td>(.*)<\/td>/ig, (tag, item) => trArr.push(item));
   
-    trArr.forEach((elem, index) => {
+    trArr.every((elem, index) => {
       if (elem.includes('input')) {
-        field = (arrFields[index])
+        field = (arrFields[index]);
+        return false;
       }
+      return true;
     });
   
     app.request('POST', '/api/update', {id: trArr[0], [field]: str});
+  
+    return window.location = window.location.href;
   }
 };
 
@@ -176,7 +184,9 @@ app.deleteMany = () => app.doc.getElementById('deleteCheckWorker').addEventListe
   
     app.request('POST', '/api/deleteMany', {id: idWorkersToString});
   
-    return app.writeTable();
+    app.writeTable();
+  
+    return window.location = window.location.href;
   }
   
   return false;
@@ -197,4 +207,5 @@ app.init = () => {
   app.deleteMany();
 };
 
-window.onload = () => app.init();
+//window.onload = () => app.init();
+app.init();
