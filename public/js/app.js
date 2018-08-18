@@ -13,11 +13,14 @@ app.request = (method, url, json, callback) => {
   method = (typeof(method) === 'string' && ['POST','GET','PUT','DELETE'].includes(method.toUpperCase())) ? method.toUpperCase() : 'GET';
   url = (typeof(url) === 'string') ? url : '/';
   json = (typeof(json) === 'object' && json !== null) ? json : {};
+
   
   const xhr = new XMLHttpRequest();
   
+  //xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
+  //xhr.setRequestHeader('Content-Type', 'application/json');
+  
   xhr.open(method, url, true); //async-true
-  xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
   
   xhr.onload = () => {
     if (xhr.status !== 200) return callback(xhr.status + ': ' + xhr.statusText); //404: Not Found
@@ -25,11 +28,18 @@ app.request = (method, url, json, callback) => {
     callback(null, xhr.responseText);
   };
   
-  xhr.onerror = xhr.onabort = () => {
-    setTimeout(app.request(method, url, json, callback), 500);
+  xhr.onreadystatechange = function() {
+    if (this.readyState !== 4) return;
   };
   
-  xhr.send(JSON.stringify(json));
+  xhr.onerror = xhr.onabort = () => {
+    console.error(xhr.status + ': ' + xhr.responseText);
+  };
+  
+  let payloadString = JSON.stringify(json);
+  xhr.send(payloadString);
+  
+  return false;
 };
 
 
@@ -49,7 +59,7 @@ app.template = (arr) => {
 };
 
 
-app.writeTable = () => app.request('GET', '/api/get', '', (err, data) => {
+app.writeTable = () => app.request('GET', '/workers', '', (err, data) => {
   if (err) return console.error(err);
   
   app.table.innerHTML = app.table.oldHTML; //purify the fields of the table
@@ -69,9 +79,7 @@ app.deleteWorker = () => app.table.addEventListener('click', (event) => {
     const parentDelete = target.parentNode.parentNode;
     parentDelete.parentNode.removeChild(parentDelete);
     
-    app.request('GET', '/api/delete?id=' + target.pathname.slice(1));
-    
-    return window.location = window.location.href;
+    return app.request('DELETE', '/workers?id=' + target.pathname.slice(1));
   }
 });
 
@@ -87,15 +95,13 @@ app.createWorker = () => app.doc.getElementById('sendNewWorker').addEventListene
   };
   
   if (jsonInput.name && jsonInput.age && jsonInput.salary) {
-    app.request('POST', '/api/add', jsonInput);
+    app.request('POST', '/workers', jsonInput);
   
     form.elements.name.value   = '';
     form.elements.age.value    = '';
     form.elements.salary.value = '';
 
-    app.writeTable();
-    
-    return window.location = window.location.href;
+    return app.writeTable();
   }
   return false;
 });
@@ -152,9 +158,7 @@ app.saveUpdate = (field, str) => {
       return true;
     });
   
-    app.request('POST', '/api/update', {id: trArr[0], [field]: str});
-  
-    return window.location = window.location.href;
+    return app.request('PUT', '/workers', {id: trArr[0], [field]: str});
   }
 };
 
@@ -182,11 +186,9 @@ app.deleteMany = () => app.doc.getElementById('deleteCheckWorker').addEventListe
   if (arrValue.length) {
     const idWorkersToString = arrValue.join(',');
   
-    app.request('POST', '/api/deleteMany', {id: idWorkersToString});
+    app.request('DELETE', '/workers', {id: idWorkersToString});
   
-    app.writeTable();
-  
-    return window.location = window.location.href;
+    return app.writeTable();
   }
   
   return false;
@@ -208,4 +210,5 @@ app.init = () => {
 };
 
 //window.onload = () => app.init();
+//window.location = window.location.href;
 app.init();

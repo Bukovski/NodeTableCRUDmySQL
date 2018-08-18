@@ -1,2 +1,6 @@
 node_modules/
 .idea
+need.txt
+oldWersion.js
+https/cert.pem
+https/key.pem
