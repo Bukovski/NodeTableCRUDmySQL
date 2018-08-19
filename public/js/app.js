@@ -17,9 +17,6 @@ app.request = (method, url, json, callback) => {
   
   const xhr = new XMLHttpRequest();
   
-  //xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
-  //xhr.setRequestHeader('Content-Type', 'application/json');
-  
   xhr.open(method, url, true); //async-true
   
   xhr.onload = () => {
