@@ -1,6 +1,5 @@
 node_modules/
 .idea/
-need.txt
-oldWersion.js
+notes/
 https/cert.pem
 https/key.pem
